@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PulseGrid IoT management dashboard demo.">
+  <title>PulseGrid · IoT management</title>
+  <style>
+    :root { --bg:#081225; --surface:#101f38; --surface-2:#162945; --line:rgba(164,197,234,.16); --text:#ecf7ff; --muted:#9bb0c9; --cyan:#45e5e7; --violet:#8c7bff; --green:#73e2a7; --amber:#ffc86b; --red:#ff8295; --shadow:0 20px 50px rgba(0,0,0,.25); }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:radial-gradient(circle at 0 0,#142c52,transparent 35%),var(--bg); color:var(--text); font:15px/1.5 Inter,Segoe UI,Arial,sans-serif; }
+    .layout { display:flex; min-height:100vh; }
+    .sidebar { position:fixed; inset:0 auto 0 0; z-index:5; width:245px; padding:28px 18px; border-right:1px solid var(--line); background:rgba(6,15,31,.88); backdrop-filter:blur(12px); }
+    .brand { display:flex; align-items:center; gap:10px; margin:0 10px 34px; font-size:18px; font-weight:800; letter-spacing:.3px; }
+    .brand-mark { display:grid; place-items:center; width:32px; height:32px; border-radius:10px; color:#061426; background:linear-gradient(135deg,var(--cyan),var(--violet)); }
+    .nav a { display:block; margin:5px 0; padding:11px 13px; border-radius:10px; color:var(--muted); font-weight:600; text-decoration:none; }
+    .nav a:hover,.nav a.active { background:linear-gradient(90deg,rgba(69,229,231,.16),rgba(140,123,255,.13)); color:#fff; }
+    .sidebar-note { position:absolute; bottom:28px; left:28px; right:28px; color:var(--muted); font-size:12px; }
+    .main { width:calc(100% - 245px); max-width:1500px; margin-left:245px; padding:38px clamp(20px,4vw,60px); }
+    .page-head { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:28px; }
+    .eyebrow { color:var(--cyan); font-size:12px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    h1 { margin:6px 0; font-size:clamp(28px,4vw,40px); line-height:1.1; }
+    h2 { margin:0; font-size:18px; }
+    p { margin:8px 0 0; } .muted { color:var(--muted); }
+    .quick-links,.actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .button { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:10px 14px; border:0; border-radius:9px; background:linear-gradient(135deg,var(--cyan),#39bde2); color:#052037; cursor:pointer; font:inherit; font-weight:800; text-decoration:none; }
+    .button:hover { filter:brightness(1.08); transform:translateY(-1px); }
+    .button.ghost { border:1px solid var(--line); background:rgba(255,255,255,.07); color:var(--text); }
+    .button.danger { border:1px solid rgba(255,130,149,.42); background:rgba(255,130,149,.13); color:#ffc1cb; }
+    .nav-toggle { display:none; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(165px,1fr)); gap:16px; }
+    .card,.panel { border:1px solid var(--line); border-radius:17px; background:linear-gradient(145deg,rgba(22,41,69,.94),rgba(12,28,51,.92)); box-shadow:var(--shadow); }
+    .card { padding:20px; } .label { color:var(--muted); font-weight:600; }
+    .number { margin-top:8px; font-size:34px; font-weight:800; } .cyan{color:var(--cyan)} .violet{color:#aca2ff} .green{color:var(--green)} .amber{color:var(--amber)}
+    .panel { margin-top:18px; padding:22px; } .panel-title { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:16px; }
+    .text-button { border:0; background:none; padding:0; color:var(--cyan); cursor:pointer; font:inherit; font-weight:800; }
+    .table-wrap { overflow-x:auto; } table { width:100%; min-width:610px; border-collapse:collapse; } th,td { padding:13px 11px; border-bottom:1px solid var(--line); text-align:left; } th { color:#b7cbe2; font-size:12px; letter-spacing:.07em; text-transform:uppercase; } tr:hover td { background:rgba(255,255,255,.025); }
+    .badge { display:inline-flex; padding:4px 9px; border-radius:999px; background:rgba(115,226,167,.13); color:var(--green); font-size:12px; font-weight:800; } .badge.offline { background:rgba(255,200,107,.14); color:var(--amber); }
+    .empty { padding:30px; color:var(--muted); text-align:center; }
+    dialog { width:min(480px,calc(100% - 32px)); border:1px solid var(--line); border-radius:17px; background:#10213b; color:var(--text); box-shadow:var(--shadow); } dialog::backdrop { background:rgba(0,0,0,.64); backdrop-filter:blur(3px); }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; margin-top:16px; } .wide { grid-column:1/-1; } label { display:block; margin-bottom:6px; color:var(--muted); font-size:13px; font-weight:700; } input,select { width:100%; padding:10px 11px; border:1px solid #284362; border-radius:9px; background:#0a1930; color:var(--text); font:inherit; } input:focus,select:focus { outline:2px solid rgba(69,229,231,.42); border-color:var(--cyan); }
+    @media(max-width:800px) { .sidebar { left:-255px; transition:left .2s; } .sidebar.open { left:0; } .sidebar-note { display:none; } .main { width:100%; margin-left:0; padding:25px 17px; } .nav-toggle { display:inline-flex; margin-bottom:12px; } .page-head { flex-wrap:wrap; } .form-grid { grid-template-columns:1fr; } .wide { grid-column:auto; } }
+    .view{display:none}.view.active{display:block}.sidebar-note{display:none}.inline-actions{display:flex;gap:10px;flex-wrap:wrap}.danger-link{color:var(--red)}.notice{display:none;padding:12px 14px;border:1px solid rgba(115,226,167,.35);border-radius:10px;background:rgba(115,226,167,.11);color:#c5ffe0;margin-bottom:18px}.notice.show{display:block}@media(max-width:800px){.sidebar-note{display:none}}
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="brand-mark">⌁</span>PulseGrid</div>
+      <nav class="nav" aria-label="Main navigation">
+        <a class="active" href="#dashboard" data-view="dashboard">Dashboard</a>
+        <a href="#devices" data-view="devices">Devices</a>
+        <a href="#sensors" data-view="sensors">Sensors</a>
+        <a href="#readings" data-view="readings">Readings</a>
+      </nav>
+    </aside>
+
+    <main class="main" id="dashboard">
+      <div class="page-head">
+        <div>
+          <button class="button ghost nav-toggle" id="navToggle" type="button">Menu</button>
+          <div class="eyebrow">Operations overview</div>
+          <h1>Connected, at a glance.</h1>
+          <p class="muted">A lightweight dashboard for your IoT inventory and historical telemetry.</p>
+        </div>
+        <div class="quick-links"><button class="button" id="addDevice" type="button">Add device</button><a class="button ghost" href="#devices" data-view="devices">View inventory</a></div>
+      </div>
+
+      <section class="cards" aria-label="Inventory summary">
+        <article class="card"><div class="label">Devices</div><div class="number cyan" id="deviceCount">0</div></article>
+        <article class="card"><div class="label">Sensors</div><div class="number violet" id="sensorCount">0</div></article>
+        <article class="card"><div class="label">Stored readings</div><div class="number green" id="readingCount">0</div></article>
+      </section>
+      <section class="cards" style="margin-top:16px">
+        <article class="card"><div class="label">Active / online</div><div class="number green" id="onlineCount">0</div></article>
+        <article class="card"><div class="label">Inactive / offline</div><div class="number amber" id="offlineCount">0</div></article>
+        <article class="card"><div class="label">Data source</div><div class="number" style="font-size:18px">Browser demo</div><p class="muted" style="font-size:13px">Local sample data, not live telemetry.</p></article>
+      </section>
+
+      <section class="panel" id="inventory">
+        <div class="panel-title"><h2>Device status overview</h2><button class="text-button" id="resetDemo" type="button">Reset sample data</button></div>
+        <div class="table-wrap"><table><thead><tr><th>ID</th><th>Device</th><th>Type</th><th>Status</th><th aria-label="Actions"></th></tr></thead><tbody id="deviceRows"></tbody></table></div>
+      </section>
+      <div id="otherViews">
+        <section class="view" id="devicesView">
+          <div class="page-head"><div><div class="eyebrow">Inventory</div><h1>Device management</h1><p class="muted">Add, update, and delete your IoT devices.</p></div></div>
+          <div class="notice" id="notice"></div>
+          <section class="form-card"><div class="panel-title"><h2 id="deviceFormHeading">Add device</h2></div><form class="form-grid" id="fullDeviceForm"><input type="hidden" id="editDeviceId"><div><label for="fullDeviceName">Device name</label><input id="fullDeviceName" required maxlength="50" placeholder="e.g. Warehouse monitor"></div><div><label for="fullDeviceType">Device type</label><input id="fullDeviceType" maxlength="30" placeholder="e.g. Sensor Hub"></div><div><label for="fullDeviceStatus">Status</label><select id="fullDeviceStatus"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div><div class="wide inline-actions"><button class="button" id="saveDevice">Add device</button><button type="button" class="button ghost" id="cancelDevice" hidden>Cancel</button></div></form></section>
+          <section class="panel"><div class="panel-title"><h2>Your devices</h2><span class="reading-note" id="deviceResult"></span></div><div class="filters"><div><label for="deviceSearch">Search name</label><input id="deviceSearch" placeholder="Find a device"></div><div><label for="deviceStatusFilter">Status</label><select id="deviceStatusFilter"><option value="">All statuses</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Device</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead><tbody id="fullDeviceRows"></tbody></table></div></section>
+        </section>
+        <section class="view" id="sensorsView">
+          <div class="page-head"><div><div class="eyebrow">Instrumentation</div><h1>Sensor management</h1><p class="muted">Configure the sensors attached to your devices.</p></div></div>
+          <section class="form-card"><div class="panel-title"><h2 id="sensorFormHeading">Add a sensor</h2></div><form class="form-grid" id="fullSensorForm"><input type="hidden" id="editSensorId"><div><label for="sensorName">Sensor name</label><input id="sensorName" required maxlength="50" placeholder="e.g. Air quality"></div><div><label for="sensorDevice">Device</label><select id="sensorDevice" required></select></div><div><label for="sensorType">Sensor type</label><input id="sensorType" required maxlength="30" placeholder="e.g. Temperature"></div><div><label for="sensorUnit">Unit</label><input id="sensorUnit" maxlength="20" placeholder="e.g. Celsius"></div><div class="wide inline-actions"><button class="button" id="saveSensor">Add sensor</button><button type="button" class="button ghost" id="cancelSensor" hidden>Cancel</button></div></form></section>
+          <section class="panel"><div class="panel-title"><h2>Registered sensors</h2><span class="reading-note" id="sensorResult"></span></div><div class="filters"><div><label for="sensorSearch">Search</label><input id="sensorSearch" placeholder="Name or type"></div><div><label for="sensorDeviceFilter">Device</label><select id="sensorDeviceFilter"></select></div></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Sensor</th><th>Device</th><th>Type</th><th>Unit</th><th>Actions</th></tr></thead><tbody id="fullSensorRows"></tbody></table></div></section>
+        </section>
+        <section class="view" id="readingsView">
+          <div class="page-head"><div><div class="eyebrow">Historical telemetry</div><h1>Sensor readings</h1><p class="muted">Add and filter stored historical measurements.</p></div></div>
+          <section class="form-card"><div class="panel-title"><h2 id="readingFormHeading">Add reading</h2></div><form class="form-grid" id="fullReadingForm"><input type="hidden" id="editReadingId"><div><label for="readingSensor">Sensor</label><select id="readingSensor" required></select></div><div><label for="readingValue">Reading value</label><input id="readingValue" required type="number" step="any" placeholder="e.g. 23.5"></div><div><label for="readingTime">Recorded at</label><input id="readingTime" required type="datetime-local"></div><div class="wide inline-actions"><button class="button" id="saveReading">Add reading</button><button type="button" class="button ghost" id="cancelReading" hidden>Cancel</button></div></form></section>
+          <section class="panel"><div class="panel-title"><h2>Reading history</h2><span class="reading-note">Newest first</span></div><div class="filters"><div><label for="readingSensorFilter">Sensor</label><select id="readingSensorFilter"></select></div><div><label for="readingFrom">From</label><input id="readingFrom" type="date"></div><div><label for="readingTo">To</label><input id="readingTo" type="date"></div></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Sensor</th><th>Device</th><th>Value</th><th>Unit</th><th>Recorded at</th><th>Actions</th></tr></thead><tbody id="fullReadingRows"></tbody></table></div></section>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="deviceDialog">
+    <form method="dialog" id="deviceForm">
+      <div class="panel-title"><h2>Add a device</h2><button class="text-button" value="cancel" type="submit">Close</button></div>
+      <div class="form-grid">
+        <div class="wide"><label for="name">Device name</label><input id="name" name="name" required placeholder="e.g. Rooftop weather station"></div>
+        <div><label for="type">Device type</label><input id="type" name="type" required placeholder="e.g. Weather monitor"></div>
+        <div><label for="status">Status</label><select id="status" name="status"><option value="ACTIVE">Active</option><option value="OFFLINE">Offline</option></select></div>
+      </div>
+      <div class="actions" style="justify-content:flex-end;margin-top:20px"><button class="button ghost" value="cancel" type="submit">Cancel</button><button class="button" value="default" type="submit">Save device</button></div>
+    </form>
+  </dialog>
+
+  <script>
+    const storageKey = 'pulsegrid-static-devices';
+    const sampleDevices = [
+      { id: 'DEV-1024', name: 'North greenhouse', type: 'Climate monitor', status: 'ACTIVE', sensors: 4, readings: 1284 },
+      { id: 'DEV-1025', name: 'Loading bay meter', type: 'Energy monitor', status: 'ACTIVE', sensors: 2, readings: 632 },
+      { id: 'DEV-1026', name: 'Cold storage probe', type: 'Temperature monitor', status: 'OFFLINE', sensors: 1, readings: 418 }
+    ];
+    const getDevices = () => JSON.parse(localStorage.getItem(storageKey) || JSON.stringify(sampleDevices));
+    const saveDevices = devices => localStorage.setItem(storageKey, JSON.stringify(devices));
+    const esc = value => String(value).replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[character]));
+    function render() {
+      const devices = getDevices();
+      const active = devices.filter(device => device.status === 'ACTIVE').length;
+      document.getElementById('deviceCount').textContent = devices.length;
+      document.getElementById('sensorCount').textContent = devices.reduce((total, device) => total + device.sensors, 0);
+      document.getElementById('readingCount').textContent = devices.reduce((total, device) => total + device.readings, 0).toLocaleString();
+      document.getElementById('onlineCount').textContent = active;
+      document.getElementById('offlineCount').textContent = devices.length - active;
+      document.getElementById('deviceRows').innerHTML = devices.length ? devices.map(device => `<tr><td>${esc(device.id)}</td><td>${esc(device.name)}</td><td>${esc(device.type)}</td><td><span class="badge ${device.status === 'ACTIVE' ? '' : 'offline'}">${device.status === 'ACTIVE' ? 'Active' : 'Offline'}</span></td><td><button class="text-button" type="button" data-delete="${esc(device.id)}">Remove</button></td></tr>`).join('') : '<tr><td class="empty" colspan="5">No devices are available. Add one to get started.</td></tr>';
+    }
+    document.getElementById('navToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
+    document.getElementById('addDevice').addEventListener('click', () => document.getElementById('deviceDialog').showModal());
+    document.getElementById('deviceForm').addEventListener('submit', event => {
+      if (event.submitter.value === 'cancel') return;
+      event.preventDefault();
+      const form = new FormData(event.currentTarget), devices = getDevices();
+      devices.push({ id: `DEV-${String(1024 + devices.length + 1).padStart(4, '0')}`, name: form.get('name').trim(), type: form.get('type').trim(), status: form.get('status'), sensors: 0, readings: 0 });
+      saveDevices(devices); event.currentTarget.reset(); document.getElementById('deviceDialog').close(); render();
+    });
+    document.getElementById('deviceRows').addEventListener('click', event => {
+      const id = event.target.dataset.delete; if (!id || !confirm('Remove this device from this browser demo?')) return;
+      saveDevices(getDevices().filter(device => device.id !== id)); render();
+    });
+    document.getElementById('resetDemo').addEventListener('click', () => { if (confirm('Restore the sample dashboard data?')) { localStorage.removeItem(storageKey); render(); } });
+    render();
+  </script>
+  <script>
+  (() => {
+    const KEY='pulsegrid-full-demo';
+    const seed={devices:[{id:'DEV-1024',name:'North greenhouse',type:'Climate monitor',status:'ACTIVE'},{id:'DEV-1025',name:'Loading bay meter',type:'Energy monitor',status:'ACTIVE'},{id:'DEV-1026',name:'Cold storage probe',type:'Temperature monitor',status:'INACTIVE'}],sensors:[{id:'S101',name:'Humidity',deviceId:'DEV-1024',type:'Humidity',unit:'%RH'},{id:'S102',name:'Air temperature',deviceId:'DEV-1024',type:'Temperature',unit:'°C'},{id:'S103',name:'Power draw',deviceId:'DEV-1025',type:'Power',unit:'kW'},{id:'S104',name:'Storage temperature',deviceId:'DEV-1026',type:'Temperature',unit:'°C'}],readings:[{id:'R1001',sensorId:'S101',value:'64.2',time:'2026-10-23T09:15'},{id:'R1002',sensorId:'S102',value:'22.8',time:'2026-10-23T09:15'},{id:'R1003',sensorId:'S103',value:'3.6',time:'2026-10-23T08:45'},{id:'R1004',sensorId:'S104',value:'4.1',time:'2026-10-22T18:30'}]};
+    const q=id=>document.getElementById(id),load=()=>JSON.parse(localStorage.getItem(KEY)||JSON.stringify(seed)),store=x=>localStorage.setItem(KEY,JSON.stringify(x));
+    const escapeHtml=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const find=(list,id)=>list.find(x=>x.id===id); const newId=(pre,list,start)=>pre+String(Math.max(start,...list.map(x=>+x.id.replace(/\D/g,'')||0))+1).padStart(pre==='DEV-'?4:pre==='S'?3:4,'0');
+    const select=(id,rows,label,blank)=>{const old=q(id).value;q(id).innerHTML=`<option value="">${blank}</option>`+rows.map(x=>`<option value="${x.id}">${escapeHtml(label(x))}</option>`).join('');q(id).value=old};
+    function selects(){const d=load();select('sensorDevice',d.devices,x=>x.name,'Select device');select('sensorDeviceFilter',d.devices,x=>x.name,'All devices');select('readingSensor',d.sensors,x=>`${x.name} (${x.id})`,'Select sensor');select('readingSensorFilter',d.sensors,x=>x.name,'All sensors')}
+    function dashboard(){const d=load(),on=d.devices.filter(x=>x.status==='ACTIVE').length;q('deviceCount').textContent=d.devices.length;q('sensorCount').textContent=d.sensors.length;q('readingCount').textContent=d.readings.length;q('onlineCount').textContent=on;q('offlineCount').textContent=d.devices.length-on;q('deviceRows').innerHTML=d.devices.map(x=>`<tr><td>${x.id}</td><td>${escapeHtml(x.name)}</td><td>${escapeHtml(x.type||'—')}</td><td><span class="badge ${x.status==='ACTIVE'?'':'warn'}">${x.status==='ACTIVE'?'Active':'Inactive'}</span></td><td></td></tr>`).join('')||'<tr><td colspan="5" class="empty">No devices are available.</td></tr>'}
+    function devices(){const d=load(),term=q('deviceSearch').value.toLowerCase(),status=q('deviceStatusFilter').value,rows=d.devices.filter(x=>(!term||x.name.toLowerCase().includes(term))&&(!status||x.status===status));q('deviceResult').textContent=`${rows.length} matching record(s)`;q('fullDeviceRows').innerHTML=rows.map(x=>`<tr><td>${x.id}</td><td>${escapeHtml(x.name)}</td><td>${escapeHtml(x.type||'—')}</td><td><span class="badge ${x.status==='ACTIVE'?'':'warn'}">${x.status==='ACTIVE'?'Active':'Inactive'}</span></td><td><button class="text-button" data-edit="device" data-id="${x.id}">Edit</button> <button class="text-button danger-link" data-delete="device" data-id="${x.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">No devices match these filters.</td></tr>'}
+    function sensors(){const d=load(),term=q('sensorSearch').value.toLowerCase(),did=q('sensorDeviceFilter').value,rows=d.sensors.filter(x=>(!did||x.deviceId===did)&&(!term||`${x.name} ${x.type}`.toLowerCase().includes(term)));q('sensorResult').textContent=`${rows.length} matching record(s)`;q('fullSensorRows').innerHTML=rows.map(x=>`<tr><td>${x.id}</td><td>${escapeHtml(x.name)}</td><td>${escapeHtml(find(d.devices,x.deviceId)?.name||'—')}</td><td>${escapeHtml(x.type)}</td><td>${escapeHtml(x.unit||'—')}</td><td><button class="text-button" data-edit="sensor" data-id="${x.id}">Edit</button> <button class="text-button danger-link" data-delete="sensor" data-id="${x.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="6" class="empty">No sensors match these filters.</td></tr>'}
+    function readings(){const d=load(),sid=q('readingSensorFilter').value,from=q('readingFrom').value,to=q('readingTo').value,rows=d.readings.filter(x=>(!sid||x.sensorId===sid)&&(!from||x.time.slice(0,10)>=from)&&(!to||x.time.slice(0,10)<=to)).sort((a,b)=>b.time.localeCompare(a.time));q('fullReadingRows').innerHTML=rows.map(x=>{const s=find(d.sensors,x.sensorId),dev=s&&find(d.devices,s.deviceId);return `<tr><td>${x.id}</td><td>${escapeHtml(s?.name||'Removed sensor')}</td><td>${escapeHtml(dev?.name||'—')}</td><td>${escapeHtml(x.value)}</td><td>${escapeHtml(s?.unit||'—')}</td><td>${new Date(x.time).toLocaleString()}</td><td><button class="text-button" data-edit="reading" data-id="${x.id}">Edit</button> <button class="text-button danger-link" data-delete="reading" data-id="${x.id}">Delete</button></td></tr>`}).join('')||'<tr><td colspan="7" class="empty">No readings match these filters.</td></tr>'}
+    const draw=()=>{selects();dashboard();devices();sensors();readings()};
+    function flash(t){q('notice').textContent=t;q('notice').classList.add('show');setTimeout(()=>q('notice').classList.remove('show'),3000)}
+    function reset(kind){q(`full${kind[0].toUpperCase()+kind.slice(1)}Form`).reset();q(`edit${kind[0].toUpperCase()+kind.slice(1)}Id`).value='';q(`${kind}FormHeading`).textContent=kind==='device'?'Add device':`Add ${kind==='sensor'?'a sensor':'reading'}`;q(`save${kind[0].toUpperCase()+kind.slice(1)}`).textContent=kind==='device'?'Add device':`Add ${kind}`;q(`cancel${kind[0].toUpperCase()+kind.slice(1)}`).hidden=true;selects()}
+    function show(name){const main=document.querySelector('.main'),other=q('otherViews');Array.from(main.children).forEach(x=>{if(x!==other)x.style.display=name==='dashboard'?'':'none'});other.style.display=name==='dashboard'?'none':'block';document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===`${name}View`));document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===name));q('sidebar').classList.remove('open');history.replaceState(null,'',`#${name}`);window.scrollTo(0,0)}
+    document.querySelectorAll('[data-view]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();show(a.dataset.view)}));
+    q('addDevice').addEventListener('click',e=>{e.stopImmediatePropagation();show('devices');q('fullDeviceName').focus()},{capture:true});
+    q('resetDemo').addEventListener('click',e=>{e.stopImmediatePropagation();if(confirm('Restore the sample dashboard data?')){localStorage.removeItem(KEY);draw();}},{capture:true});
+    ['deviceSearch','deviceStatusFilter'].forEach(id=>q(id).addEventListener('input',devices));['sensorSearch','sensorDeviceFilter'].forEach(id=>q(id).addEventListener('input',sensors));['readingSensorFilter','readingFrom','readingTo'].forEach(id=>q(id).addEventListener('input',readings));
+    q('fullDeviceForm').addEventListener('submit',e=>{e.preventDefault();const d=load(),id=q('editDeviceId').value,item={name:q('fullDeviceName').value.trim(),type:q('fullDeviceType').value.trim(),status:q('fullDeviceStatus').value};id?Object.assign(find(d.devices,id),item):d.devices.push({id:newId('DEV-',d.devices,1023),...item});store(d);draw();reset('device');flash(id?'Device updated.':'Device added.')});
+    q('fullSensorForm').addEventListener('submit',e=>{e.preventDefault();const d=load(),id=q('editSensorId').value,item={name:q('sensorName').value.trim(),deviceId:q('sensorDevice').value,type:q('sensorType').value.trim(),unit:q('sensorUnit').value.trim()};if(!item.deviceId)return;id?Object.assign(find(d.sensors,id),item):d.sensors.push({id:newId('S',d.sensors,100),...item});store(d);draw();reset('sensor');flash(id?'Sensor updated.':'Sensor added.')});
+    q('fullReadingForm').addEventListener('submit',e=>{e.preventDefault();const d=load(),id=q('editReadingId').value,item={sensorId:q('readingSensor').value,value:q('readingValue').value,time:q('readingTime').value};if(!item.sensorId)return;id?Object.assign(find(d.readings,id),item):d.readings.push({id:newId('R',d.readings,1000),...item});store(d);draw();reset('reading');flash(id?'Reading updated.':'Reading added.')});
+    ['device','sensor','reading'].forEach(k=>q(`cancel${k[0].toUpperCase()+k.slice(1)}`).addEventListener('click',()=>reset(k)));
+    document.addEventListener('click',e=>{const b=e.target.closest('[data-edit],[data-delete]');if(!b)return;const kind=b.dataset.edit||b.dataset.delete,id=b.dataset.id,d=load();if(b.dataset.delete){if(!confirm(`Delete this ${kind}${kind==='device'?' and its related records':''}?`))return;if(kind==='device'){const ids=d.sensors.filter(x=>x.deviceId===id).map(x=>x.id);d.sensors=d.sensors.filter(x=>x.deviceId!==id);d.readings=d.readings.filter(x=>!ids.includes(x.sensorId));d.devices=d.devices.filter(x=>x.id!==id)}else if(kind==='sensor'){d.readings=d.readings.filter(x=>x.sensorId!==id);d.sensors=d.sensors.filter(x=>x.id!==id)}else d.readings=d.readings.filter(x=>x.id!==id);store(d);draw();flash(`${kind[0].toUpperCase()+kind.slice(1)} deleted.`);return}const item=find(d[`${kind}s`],id);q(`edit${kind[0].toUpperCase()+kind.slice(1)}Id`).value=id;if(kind==='device'){q('fullDeviceName').value=item.name;q('fullDeviceType').value=item.type;q('fullDeviceStatus').value=item.status}else if(kind==='sensor'){q('sensorName').value=item.name;q('sensorDevice').value=item.deviceId;q('sensorType').value=item.type;q('sensorUnit').value=item.unit}else{q('readingSensor').value=item.sensorId;q('readingValue').value=item.value;q('readingTime').value=item.time}q(`${kind}FormHeading`).textContent=`Edit ${kind}`;q(`save${kind[0].toUpperCase()+kind.slice(1)}`).textContent='Save changes';q(`cancel${kind[0].toUpperCase()+kind.slice(1)}`).hidden=false;show(`${kind}s`)});
+    draw();const h=location.hash.slice(1);if(['devices','sensors','readings'].includes(h))show(h);
+  })();
+  </script>
+</body>
+</html>

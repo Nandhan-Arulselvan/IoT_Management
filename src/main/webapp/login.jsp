@@ -1,0 +1,8 @@
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page import="org.apache.commons.text.StringEscapeUtils" %>
+<% String cp = request.getContextPath(), token = (String) request.getAttribute("csrfToken"), flash = (String) request.getAttribute("flashMessage"), flashType = (String) request.getAttribute("flashType"); %>
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in · PulseGrid</title><link rel="stylesheet" href="<%= cp %>/assets/styles.css"><link rel="stylesheet" href="<%= cp %>/assets/auth.css"></head>
+<body class="auth-page"><main class="auth-shell"><section class="auth-card"><div class="brand auth-brand"><span class="brand-mark">⌁</span> PulseGrid</div><div class="eyebrow">Secure access</div><h1>Welcome back</h1><p>Sign in to manage your connected inventory and historical telemetry.</p>
+<% if (flash != null) { %><div class="alert <%= StringEscapeUtils.escapeHtml4(flashType) %>"><%= StringEscapeUtils.escapeHtml4(flash) %></div><% } %>
+<form method="post" action="<%= cp %>/login" class="auth-form"><input type="hidden" name="csrfToken" value="<%= StringEscapeUtils.escapeHtml4(token) %>"><div><label for="identifier">Username or email</label><input id="identifier" required maxlength="100" name="identifier" autocomplete="username" autofocus></div><div><label for="password">Password</label><input id="password" required type="password" maxlength="72" name="password" autocomplete="current-password"></div><button class="button" type="submit">Sign in</button></form><p class="auth-switch">New to PulseGrid? <a href="<%= cp %>/register">Create an account</a></p></section></main></body></html>
